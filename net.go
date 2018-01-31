@@ -1,20 +1,9 @@
 package arin
 
 import (
-    "regexp"
     "strings"
     "fmt"
 )
-
-var reNam = regexp.MustCompile("NetName: +(.*)")
-var reHan = regexp.MustCompile("NetHandle: +(.*)")
-var reRng = regexp.MustCompile("NetRange: +(.*) - (.*)")
-var reCdr = regexp.MustCompile("CIDR: +(.*)")
-var reTyp = regexp.MustCompile("NetType: +(.*)")
-var reReg = regexp.MustCompile("RegDate: +(.*)")
-var reUpd = regexp.MustCompile("Updated: +(.*)")
-var rePar = regexp.MustCompile("Parent: +.* \\((.*)\\)")
-var reOrg = regexp.MustCompile("Organization: +(.*) .*")
 
 type Network struct {
     Name         string
@@ -65,18 +54,22 @@ func NewNetwork(record string) *Network {
         return n
     }
 
-    rng := reRng.FindStringSubmatch(record)
+    rec := parseRecord(record)
+    rng := strings.Split(rec["NetRange"], " - ")
+    parB := strings.Index(rec["Parent"], "(") + 1
+    parE := strings.Index(rec["Parent"], ")")
+    org := strings.Index(rec["Organization"], "(") - 1
 
-    n.Name = reNam.FindStringSubmatch(record)[1]
-    n.Handle = reHan.FindStringSubmatch(record)[1]
-    n.Start = rng[1]
-    n.End = rng[2]
-    n.Cidr = reCdr.FindStringSubmatch(record)[1]
-    n.Type = reTyp.FindStringSubmatch(record)[1]
-    n.Registered = reReg.FindStringSubmatch(record)[1]
-    n.Updated = reUpd.FindStringSubmatch(record)[1]
-    n.Parent = rePar.FindStringSubmatch(record)[1]
-    n.Organization = reOrg.FindStringSubmatch(record)[1]
+    n.Name = rec["NetName"]
+    n.Handle = rec["NetHandle"]
+    n.Start = rng[0]
+    n.End = rng[1]
+    n.Cidr = rec["CIDR"]
+    n.Type = rec["NetType"]
+    n.Registered = rec["RegDate"]
+    n.Updated = rec["Updated"]
+    n.Parent = rec["Parent"][parB:parE]
+    n.Organization = rec["Organization"][:org]
 
     return n
 }
