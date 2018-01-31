@@ -12,13 +12,22 @@ type NetBlock struct {
     CidrLen string `xml:"cidrLength"`
 }
 
+func (n *NetBlock) String() string {
+    return fmt.Sprintf("%s - %s", n.Start, n.End)
+}
+
 func (n *NetBlock) Cidr() string {
     return fmt.Sprintf("%s/%s", n.Start, n.CidrLen)
 }
 
 type Organization struct {
     Name      string `xml:"name,attr"`
+    Handle    string `xml:"handle,attr"`
     Reference string `xml:"orgRef"`
+}
+
+func (o *Organization) String() string {
+    return fmt.Sprintf("Name: %s\nHandle: %s\n", o.Name, o.Handle)
 }
 
 type Parent struct {
@@ -27,15 +36,32 @@ type Parent struct {
     Reference string `xml:"parentNetRef"`
 }
 
+func (p *Parent) String() string {
+    return fmt.Sprintf("Name: %s\nHandle: %s\n", p.Name, p.Handle)
+}
+
 type WhoisIP struct {
     Name         string `xml:"name"`
     Handle       string `xml:"handle"`
     Parent       *Parent `xml:"parentNetRef"`
     Organization *Organization `xml:"orgRef"`
-    Netblocks    []*NetBlock `xml:"netBlocks>netBlock"`
+    NetBlocks    []*NetBlock `xml:"netBlocks>netBlock"`
 }
 
-func GetWhoisIP(addr string) *WhoisIP {
+func (w *WhoisIP) String() string {
+    s := fmt.Sprintf("Name: %s\nHandle: %s\n", w.Name, w.Handle)
+
+    for _, n := range w.NetBlocks {
+        s = s + fmt.Sprintf("Net Range: %v\n", n)
+    }
+
+    s = s + fmt.Sprintf("Organization:\n%v\n", w.Organization)
+    s = s + fmt.Sprintf("Parent: \n%v", w.Parent)
+
+    return s
+}
+
+func NewWhoisIP(addr string) *WhoisIP {
     var wip = new(WhoisIP)
 
     data := makeRequest("ip", addr)
@@ -44,6 +70,8 @@ func GetWhoisIP(addr string) *WhoisIP {
         log.Printf("Parse Error: %v\n", err)
         return wip
     }
+
+    fmt.Println(wip)
 
     return wip
 }
