@@ -7,7 +7,11 @@ import (
     "net"
     "net/http"
     "time"
+    "regexp"
+    "strings"
 )
+
+var reKeyVal = regexp.MustCompile("(.*): +(.*)")
 
 func httpClient() *http.Client {
 	var d = &net.Dialer{
@@ -52,4 +56,26 @@ func makeRequest(resource, handle string) string {
 	}
 
     return string(data)
+}
+
+func parseRecord(record string) map[string]string {
+    recMap := make(map[string]string)
+    matches := reKeyVal.FindAllStringSubmatch(record, -1)
+
+    for _, match := range matches {
+        k, v := match[1], strings.Trim(match[2], "\r")
+
+        // If the key is already in the map then append the data to the current
+        // value.
+        val, ok := recMap[k]
+        switch {
+        case ok:
+            val = val + "\n" + v
+            recMap[k] = val
+        default:
+            recMap[k] = v
+        }
+    }
+
+    return recMap
 }
