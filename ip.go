@@ -1,77 +1,90 @@
 package arin
 
 import (
-    "encoding/xml"
+    "regexp"
+    "strings"
     "fmt"
-    "log"
 )
 
-type NetBlock struct {
-    Start   string `xml:"startAddress"`
-    End     string `xml:"endAddress"`
-    CidrLen string `xml:"cidrLength"`
+var reNam = regexp.MustCompile("NetName: +(.*)")
+var reHan = regexp.MustCompile("NetHandle: +(.*)")
+var reRng = regexp.MustCompile("NetRange: +(.*) - (.*)")
+var reCdr = regexp.MustCompile("CIDR: +(.*)")
+var reTyp = regexp.MustCompile("NetType: +(.*)")
+var reReg = regexp.MustCompile("RegDate: +(.*)")
+var reUpd = regexp.MustCompile("Updated: +(.*)")
+var rePar = regexp.MustCompile("Parent: +.* \\((.*)\\)")
+var reOrg = regexp.MustCompile("Organization: +(.*) .*")
+
+type Network struct {
+    Name         string
+    Handle       string
+    Start        string
+    End          string
+    Cidr         string
+    Type         string
+    Registered   string
+    Updated      string
+    Parent       string
+    Organization string
 }
 
-func (n *NetBlock) String() string {
-    return fmt.Sprintf("%s - %s", n.Start, n.End)
+func (n *Network) String() string {
+    var s []string
+
+    s = append(s, fmt.Sprintf("Name: %s", n.Name))
+    s = append(s, fmt.Sprintf("Handle: %s", n.Handle))
+    s = append(s, fmt.Sprintf("Range: %s - %s", n.Start, n.End))
+    s = append(s, fmt.Sprintf("CIDR: %s", n.Cidr))
+    s = append(s, fmt.Sprintf("Type: %s", n.Type))
+    s = append(s, fmt.Sprintf("Registered: %s", n.Registered))
+    s = append(s, fmt.Sprintf("Updated: %s", n.Updated))
+    s = append(s, fmt.Sprintf("Parent: %s", n.Parent))
+    s = append(s, fmt.Sprintf("Organization: %s", n.Organization))
+
+    return strings.Join(s, "\n")
 }
 
-func (n *NetBlock) Cidr() string {
-    return fmt.Sprintf("%s/%s", n.Start, n.CidrLen)
+func (n *Network) Equal(n2 *Network) bool {
+    return n.Name == n2.Name &&
+        n.Handle == n2.Handle &&
+        n.Start == n2.Start &&
+        n.End == n2.End &&
+        n.Cidr == n2.Cidr &&
+        n.Type == n2.Type &&
+        n.Registered == n2.Registered &&
+        n.Updated == n2.Updated &&
+        n.Parent == n2.Parent &&
+        n.Organization == n2.Organization
 }
 
-type Organization struct {
-    Name      string `xml:"name,attr"`
-    Handle    string `xml:"handle,attr"`
-    Reference string `xml:"orgRef"`
-}
+func NewNetwork(record string) *Network {
+    var n = new(Network)
 
-func (o *Organization) String() string {
-    return fmt.Sprintf("Name: %s\nHandle: %s\n", o.Name, o.Handle)
-}
-
-type Parent struct {
-    Name      string `xml:"name,attr"`
-    Handle    string `xml:"handle,attr"`
-    Reference string `xml:"parentNetRef"`
-}
-
-func (p *Parent) String() string {
-    return fmt.Sprintf("Name: %s\nHandle: %s\n", p.Name, p.Handle)
-}
-
-type WhoisIP struct {
-    Name         string `xml:"name"`
-    Handle       string `xml:"handle"`
-    Parent       *Parent `xml:"parentNetRef"`
-    Organization *Organization `xml:"orgRef"`
-    NetBlocks    []*NetBlock `xml:"netBlocks>netBlock"`
-}
-
-func (w *WhoisIP) String() string {
-    s := fmt.Sprintf("Name: %s\nHandle: %s\n", w.Name, w.Handle)
-
-    for _, n := range w.NetBlocks {
-        s = s + fmt.Sprintf("Net Range: %v\n", n)
+    if record == "" {
+        return n
     }
 
-    s = s + fmt.Sprintf("Organization:\n%v\n", w.Organization)
-    s = s + fmt.Sprintf("Parent: \n%v", w.Parent)
+    rng := reRng.FindStringSubmatch(record)
 
-    return s
+    n.Name = reNam.FindStringSubmatch(record)[1]
+    n.Handle = reHan.FindStringSubmatch(record)[1]
+    n.Start = rng[1]
+    n.End = rng[2]
+    n.Cidr = reCdr.FindStringSubmatch(record)[1]
+    n.Type = reTyp.FindStringSubmatch(record)[1]
+    n.Registered = reReg.FindStringSubmatch(record)[1]
+    n.Updated = reUpd.FindStringSubmatch(record)[1]
+    n.Parent = rePar.FindStringSubmatch(record)[1]
+    n.Organization = reOrg.FindStringSubmatch(record)[1]
+
+    return n
 }
 
-func NewWhoisIP(addr string) *WhoisIP {
-    var wip = new(WhoisIP)
+func NewNetworkIP(addr string) *Network {
+    return NewNetwork(makeRequest("ip", addr))
+}
 
-    data := makeRequest("ip", addr)
-    err := xml.Unmarshal(data, wip)
-    if err != nil {
-        log.Printf("Parse Error: %v\n", err)
-        return wip
-    }
-
-    fmt.Println(wip)
-
-    return wip
+func NewNetworkHandle(handle string) *Network {
+    return NewNetwork(makeRequest("net", handle))
 }

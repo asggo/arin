@@ -26,30 +26,30 @@ func httpClient() *http.Client {
 }
 
 
-func makeRequest(resource, handle string) []byte {
-    var data []byte
-
+func makeRequest(resource, handle string) string {
     client := httpClient()
     url := fmt.Sprintf("http://whois.arin.net/rest/%s/%s", resource, handle)
 
     req, err := http.NewRequest("GET", url, nil)
     if err != nil {
         log.Printf("Request Error: %v\n", err)
-        return data
+        return ""
     }
+
+    req.Header.Set("Accept", "text/plain")
 
     resp, err := client.Do(req)
     if err != nil {
         log.Printf("Response Error: %v\n", err)
-        return data
+        return ""
     }
 
     defer resp.Body.Close()
-	data, err = ioutil.ReadAll(resp.Body)
+	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
         log.Printf("Parse Error: %v\n", err)
-		return data
+		return ""
 	}
 
-    return data
+    return string(data)
 }
