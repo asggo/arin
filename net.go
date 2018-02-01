@@ -22,10 +22,8 @@ type Network struct {
 func (n *Network) String() string {
 	var s []string
 
-	s = append(s, fmt.Sprintf("Name: %s", n.Name))
-	s = append(s, fmt.Sprintf("Handle: %s", n.Handle))
-	s = append(s, fmt.Sprintf("Range: %s - %s", n.Start, n.End))
-	s = append(s, fmt.Sprintf("CIDR: %s", n.Cidr))
+	s = append(s, fmt.Sprintf("%s (%s)", n.Name, n.Handle))
+	s = append(s, fmt.Sprintf("%s - %s (%s)", n.Start, n.End, n.Cidr))
 	s = append(s, fmt.Sprintf("Type: %s", n.Type))
 	s = append(s, fmt.Sprintf("Registered: %s", n.Registered))
 	s = append(s, fmt.Sprintf("Updated: %s", n.Updated))
