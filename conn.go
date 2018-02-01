@@ -1,17 +1,13 @@
 package arin
 
 import (
-    "fmt"
-    "io/ioutil"
-    "log"
-    "net"
-    "net/http"
-    "time"
-    "regexp"
-    "strings"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net"
+	"net/http"
+	"time"
 )
-
-var reKeyVal = regexp.MustCompile("(.*): +(.*)")
 
 func httpClient() *http.Client {
 	var d = &net.Dialer{
@@ -29,53 +25,45 @@ func httpClient() *http.Client {
 	}
 }
 
-
 func makeRequest(resource, handle string) string {
-    client := httpClient()
-    url := fmt.Sprintf("http://whois.arin.net/rest/%s/%s", resource, handle)
+	url := fmt.Sprintf("http://whois.arin.net/rest/%s/%s", resource, handle)
 
-    req, err := http.NewRequest("GET", url, nil)
-    if err != nil {
-        log.Printf("Request Error: %v\n", err)
-        return ""
-    }
+	return request(url)
+}
 
-    req.Header.Set("Accept", "text/plain")
+func makeSubRequest(resource, handle, sub string) string {
+	url := fmt.Sprintf("http://whois.arin.net/rest/%s/%s/%s", resource, handle, sub)
 
-    resp, err := client.Do(req)
-    if err != nil {
-        log.Printf("Response Error: %v\n", err)
-        return ""
-    }
+	return request(url)
+}
 
-    defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+func request(url string) string {
+	client := httpClient()
+
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-        log.Printf("Parse Error: %v\n", err)
+		log.Printf("Request Error: %v\n", err)
 		return ""
 	}
 
-    return string(data)
-}
+	req.Header.Set("Accept", "text/plain")
 
-func parseRecord(record string) map[string]string {
-    recMap := make(map[string]string)
-    matches := reKeyVal.FindAllStringSubmatch(record, -1)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Response Error: %v\n", err)
+		return ""
+	}
 
-    for _, match := range matches {
-        k, v := match[1], strings.Trim(match[2], "\r")
+	if resp.StatusCode == 404 {
+		return ""
+	}
 
-        // If the key is already in the map then append the data to the current
-        // value.
-        val, ok := recMap[k]
-        switch {
-        case ok:
-            val = val + "\n" + v
-            recMap[k] = val
-        default:
-            recMap[k] = v
-        }
-    }
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Parse Error: %v\n", err)
+		return ""
+	}
 
-    return recMap
+	return string(data)
 }
