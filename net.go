@@ -31,7 +31,7 @@ func (n *Network) String() string {
     s = append(s, "")
     s = append(s, "Children:")
 
-    for _, c := range s.Children {
+    for _, c := range n.Children {
         s = append(s, fmt.Sprintf("  %s", c))
     }
 
