@@ -39,12 +39,13 @@ func (c *Contact) addressString() string {
 func (c *Contact) String() string {
 	var s []string
 
+	s = append(s, "Whois Contact Record")
+	s = append(s, "====================")
 	s = append(s, fmt.Sprintf("%s (%s)", c.Name, c.Handle))
 	s = append(s, c.addressString())
 	s = append(s, c.Phone)
 	s = append(s, c.Email)
-	s = append(s, fmt.Sprintf("Registered: %s", c.Registered))
-	s = append(s, fmt.Sprintf("Updated: %s", c.Updated))
+	s = append(s, fmt.Sprintf("%s (%s)", c.Registered, c.Updated))
 
 	return strings.Join(s, "\n")
 }

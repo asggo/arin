@@ -22,13 +22,15 @@ type Network struct {
 func (n *Network) String() string {
 	var s []string
 
+    s = append(s, "Whois Network Record")
+    s = append(s, "====================")
 	s = append(s, fmt.Sprintf("%s (%s)", n.Name, n.Handle))
     s = append(s, n.Organization)
 	s = append(s, fmt.Sprintf("%s - %s (%s)", n.Start, n.End, n.Cidr))
-    s = append(s, n.Parent)
 	s = append(s, n.Type)
 	s = append(s, fmt.Sprintf("%s (%s)", n.Registered, n.Updated))
     s = append(s, "")
+    s = append(s, fmt.Sprintf("Parent:\n  %s", n.Parent))
     s = append(s, "Children:")
 
     for _, c := range n.Children {
